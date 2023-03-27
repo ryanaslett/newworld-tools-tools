@@ -1,6 +1,7 @@
 import sys
 import json
-from collections import Counter
+from collections import defaultdict
+
 
 def main():
     # Check that a filename was provided
@@ -18,7 +19,8 @@ def main():
     with open(perk_filename, "r") as perks_file:
         perks_list = json.load(perks_file)
         # Convert the list of perks to a dictionary for easier access
-        perks = {perk["PerkID"]: perk["ExclusiveLabels"] for perk in perks_list if "_Gem_" not in perk["PerkID"] and "_Stat_" not in perk["PerkID"]}
+        perks = {perk["PerkID"]: perk["ExclusiveLabels"] for perk in perks_list if
+                 "_Gem_" not in perk["PerkID"] and "_Stat_" not in perk["PerkID"]}
 
     # Process the data
     output_data = []
@@ -27,12 +29,19 @@ def main():
         for i in range(1, 6):
             perk_key = f"Perk{i}"
             perk_id = item.get(perk_key)
-            if perk_id:
-                if perks.get(perk_id):
-                    perk_data[perk_id] = perks.get(perk_id)
+            if perk_id and "_Gem_" not in perk_id and "_Stat_" not in perk_id:
+                perk_data[perk_id] = perks.get(perk_id)
 
         # Count the number of occurrences of each ExclusiveLabel
-        label_counts = Counter(label for labels in perk_data.values() if labels is not None for label in labels)
+        label_counts = defaultdict(int)
+        for label in perk_data.values():
+            if label is not None:
+                sublabels = label.split("+")
+                for sublabel in sublabels:
+
+                   if sublabel is not None:
+                       label_counts[sublabel] += 1
+
         # Filter objects with more than one of any particular ExclusiveLabel assigned
         if any(count > 1 for count in label_counts.values()):
             output_data.append({"ItemID": item["ItemID"], "Perks": perk_data})
@@ -40,6 +49,7 @@ def main():
     # Write the result to a file
     with open("output.json", "w") as output_file:
         json.dump(output_data, output_file, indent=2)
+
 
 if __name__ == '__main__':
     main()
