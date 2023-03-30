@@ -1,17 +1,21 @@
+import os
 import sys
 import json
 from collections import defaultdict
 
 
 def main():
-    # Check that a filename was provided
-    if len(sys.argv) < 3:
-        print("Please provide the filenames of the input JSON files as a command-line argument.")
+    # Check that a directory was provided
+    if len(sys.argv) < 2:
+        print("Please provide the directory containing the input JSON files as a command-line argument.")
         sys.exit()
-    # Read items from file
-    item_filename = sys.argv[1]
-    perk_filename = sys.argv[2]
 
+    directory = sys.argv[1]
+    item_filename = os.path.join(directory, "MasterItemDefinitions", "MasterItemDefinitions_Named.json")
+    perk_filename = os.path.join(directory, "PerkData", "ItemPerks.json")
+    lootbuckets_filename = os.path.join(directory, "LootBucketData", "LootBuckets.json")
+
+    # Read items from file
     with open(item_filename, "r") as items_file:
         items = json.load(items_file)
 
@@ -21,6 +25,10 @@ def main():
         # Convert the list of perks to a dictionary for easier access
         perks = {perk["PerkID"]: perk["ExclusiveLabels"] for perk in perks_list if
                  "_Gem_" not in perk["PerkID"] and "_Stat_" not in perk["PerkID"]}
+
+    # Read lootbuckets from file
+    with open(lootbuckets_filename, "r") as lootbuckets_file:
+        lootbuckets = json.load(lootbuckets_file)
 
     # Process the data
     output_data = []
