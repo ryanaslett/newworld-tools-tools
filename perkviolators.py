@@ -30,7 +30,11 @@ def main():
             perk_key = f"Perk{i}"
             perk_id = item.get(perk_key)
             if perk_id and "_Gem_" not in perk_id and "_Stat_" not in perk_id:
-                perk_data[perk_id] = perks.get(perk_id)
+                existing_perk = perk_data.get(perk_id, None)
+                if existing_perk is None:
+                  perk_data[perk_id] = perks.get(perk_id)
+            #    else:
+            #      print(f"https://nwdb.info/db/item/{item['ItemID']}")
 
         # Count the number of occurrences of each ExclusiveLabel
         label_counts = defaultdict(int)
@@ -45,6 +49,7 @@ def main():
         # Filter objects with more than one of any particular ExclusiveLabel assigned
         if any(count > 1 for count in label_counts.values()):
             output_data.append({"ItemID": item["ItemID"], "Perks": perk_data})
+            print(f"https://nwdb.info/db/item/{item['ItemID']}")
 
     # Write the result to a file
     with open("output.json", "w") as output_file:
