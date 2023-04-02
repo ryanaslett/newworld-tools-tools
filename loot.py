@@ -1,7 +1,12 @@
-import sys
 import json
-import yaml
-from pathlib import Path
+import sys
+
+#import yaml
+import ruamel.yaml
+from ruamel.yaml.scalarstring import PreservedScalarString
+
+
+
 
 def process_item_keys(obj, table_name, item_keys, yaml_data, key_type):
     for item_key in item_keys:
@@ -10,7 +15,38 @@ def process_item_keys(obj, table_name, item_keys, yaml_data, key_type):
                 yaml_data[table_name][item_key] = {}
             yaml_data[table_name][item_key].update({key_type: obj[item_key]})
 
+def process_fixed_width_item_keys(yaml_data):
+    # Define the fixed width column widths
+    item_width: int = 10
+    threshold_width: int = 10
+    qty_width: int = 10
+    name_width: int = 60
+
+    # Loop through each Item key and add it to the YAML data dictionary
+
+    for loot_table_id, loot_table in yaml_data.items():
+        items_string = ""
+        item_keys = [key for key in loot_table.keys() if key.startswith('Item')]
+        for item_key in item_keys:
+            item_num = item_key.replace('Item', '')
+
+            item_name = loot_table[item_key]['Name']
+            item_threshold = loot_table[item_key]['Threshold']
+            item_qty = loot_table[item_key]['Qty']
+            item_string = f'{item_key.ljust(item_width)} {item_threshold.rjust(threshold_width)} {item_qty.rjust(qty_width)} {item_name.ljust(name_width)}\n'
+            items_string += item_string
+            del(yaml_data[loot_table_id][item_key])
+
+    # Construct the multi-line string for the Item fields
+        items_output = f"Entry{' ' * (item_width - 4)}{' ' * (threshold_width - 9)} Threshold{' ' * (qty_width - 3)}Qty Name\n{'_' * (item_width + threshold_width + qty_width + name_width)}\n{items_string}"
+        yaml_data[loot_table_id]['Items'] = PreservedScalarString(items_output)
+
+
 def main():
+    yaml = ruamel.yaml.YAML();
+    yaml.indent(mapping=2, sequence=4, offset=2)
+    yaml.width = 1000
+    yaml.preserve_quotes = True
     # Check that a filename was provided
     if len(sys.argv) < 2:
         print("Please provide the filename of the input JSON file as a command-line argument.")
@@ -20,7 +56,6 @@ def main():
     filename = sys.argv[1]
     with open(filename, 'r') as f:
         data = json.load(f)  # Load JSON directly from the file
-
     # Create a dictionary for the output YAML data
     yaml_data = {}
 
@@ -67,17 +102,23 @@ def main():
         # Call the function to process item keys
         process_item_keys(obj, table_name, item_keys, yaml_data, key_type)
 
-    # Convert the YAML data to a string
-    yaml_string = yaml.dump(yaml_data, default_flow_style=False)
-
-    # Replace the input file extension with '.yml'
     output_filename = filename.replace('.json', '.yml')
 
     # Write the YAML string to the output file
     with open(output_filename, 'w') as output_file:
-        output_file.write(yaml_string)
+        yaml.dump(yaml_data, output_file)
 
-    print(f"YAML data has been written to {output_filename}")
+    # Convert the YAML data to a string
+    process_fixed_width_item_keys(yaml_data)
+
+    # Replace the input file extension with '.yml'
+    output_filename = filename.replace('.json', '_fixedwidth.yml')
+
+    # Write the YAML string to the output file
+    with open(output_filename, 'w') as output_file:
+        yaml.dump(yaml_data, output_file)
+
+    print(f"Fixed width YAML table has been written to {output_filename}")
 
 if __name__ == '__main__':
     main()
