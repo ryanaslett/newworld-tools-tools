@@ -1,50 +1,35 @@
 import json
 import sys
-
-# import yaml
-import ruamel.yaml
 from ruamel.yaml.scalarstring import PreservedScalarString
+from ruamel.yaml import YAML
 
-
-def process_item_keys(obj, table_name, item_keys, yaml_data, key_type):
-    for item_key in item_keys:
-        if obj[item_key] and obj[item_key].strip():
-            if item_key not in yaml_data[table_name]:
-                yaml_data[table_name][item_key] = {}
-            yaml_data[table_name][item_key].update({key_type: obj[item_key]})
-
-def process_fixed_width_item_keys(yaml_data):
+def process_fixed_width_item_keys(loot_buckets, yaml_data):
     # Define the fixed width column widths
     item_width: int = 10
-    threshold_width: int = 10
+    tags_width: int = 20
     qty_width: int = 10
-    name_width: int = 60
+    match_width: int = 10
+    name_width: int = 72  # because `Schematic_House_HousingItem_Table_Settler_Decor_Garden_PicnicTable01`
 
     # Loop through each Item key and add it to the YAML data dictionary
 
-    for loot_table_id, loot_table in yaml_data.items():
+    for loot_bucket_name, loot_bucket_contents in loot_buckets.items():
         items_string = ""
-        item_keys = [key for key in loot_table.keys() if key.startswith('Item')]
+        item_keys = [key for key in loot_bucket_contents.keys()]
         for item_key in item_keys:
-            item_num = item_key.replace('Item', '')
 
-            item_name = loot_table[item_key]['Name']
-            item_threshold = loot_table[item_key]['Threshold']
-            item_qty = loot_table[item_key]['Qty']
-            item_string = f'{item_key.ljust(item_width)} {item_threshold.rjust(threshold_width)} {item_qty.rjust(qty_width)} {item_name.ljust(name_width)}\n'
+            item_tags = loot_bucket_contents[item_key]['tags']
+            item_qty = loot_bucket_contents[item_key]['qty']
+            item_match = loot_bucket_contents[item_key]['match']
+            item_string = f'{item_key.ljust(name_width)} {str(item_qty).rjust(qty_width)} {str(item_match).ljust(match_width)} {item_tags.ljust(tags_width)} \n'
             items_string += item_string
-            del(yaml_data[loot_table_id][item_key])
 
     # Construct the multi-line string for the Item fields
-        items_output = f"Entry{' ' * (item_width - 4)}{' ' * (threshold_width - 9)} Threshold{' ' * (qty_width - 3)}Qty Name\n{'_' * (item_width + threshold_width + qty_width + name_width)}\n{items_string}"
-        yaml_data[loot_table_id]['Items'] = PreservedScalarString(items_output)
-
+        items_output = f"ItemId{' ' * (name_width - 6)} {' ' * (qty_width - 3)}Qty MatchOne{' ' * (match_width - 8)} Tags\n{'_' * (name_width + tags_width + qty_width + match_width)}\n{items_string}"
+        yaml_data[loot_bucket_name] = {}
+        yaml_data[loot_bucket_name]['Contents'] = PreservedScalarString(items_output)
 
 def main():
-    yaml = ruamel.yaml.YAML();
-    yaml.indent(mapping=2, sequence=4, offset=2)
-    yaml.width = 1000
-    yaml.preserve_quotes = True
     # Check that a filename was provided
     if len(sys.argv) < 2:
         print("Please provide the filename of the input JSON file as a command-line argument.")
@@ -53,70 +38,41 @@ def main():
     # Load the JSON data from the specified file
     filename = sys.argv[1]
     with open(filename, 'r') as f:
-        data = json.load(f)  # Load JSON directly from the file
+        loot_buckets_data = json.load(f)
+
     # Create a dictionary for the output YAML data
     yaml_data = {}
 
     # Loop through each JSON object and populate the YAML data dictionary
-    for obj in data:
-        table_name = obj['LootTableID']
-        if table_name.endswith('_Probs'):
-            table_name = table_name.replace('_Probs', '')
-            key_type = 'Threshold'
-            if yaml_data.get(table_name) is not None:
-                yaml_data[table_name]['MaxRoll'] = obj['MaxRoll']
-        elif table_name.endswith('_Qty'):
-            table_name = table_name.replace('_Qty', '')
-            key_type = 'Qty'
-        else:
-            # We have a new loot Table.
-            yaml_data[table_name] = {}
-            # Define a list of field names to assign to the YAML data
-            loot_table_metadata = ['RollBonusSetting', 'AND/OR', 'Conditions', 'ConditionOverridesRoll', 'TriggerLimitOnVisit', 'UseLevelGS', 'HWMMult',
-                           'ChanceToExceedIndex', 'GSBonus']
+    loot_buckets = {}
+    loot_bucket_names = {}
+    for loot_bucket_obj in loot_buckets_data:
+        for key in loot_bucket_obj.keys():
+            if key.startswith("Item") and key[4:].isdigit():
+                item_num = int(key[4:])
+                if loot_bucket_obj['RowPlaceholders'] == "FIRSTROW":
+                    loot_bucket_names[f'{item_num}'] = loot_bucket_obj.get(f'LootBucket{item_num}')
 
-            # Loop over the field names and optionally set the value in the YAML data
-            for field_name in loot_table_metadata:
-                value = obj.get(field_name, None)
-                if value and str(value).strip():
-                    yaml_data[table_name][field_name] = value
-            # Find all Item keys
-            item_keys = [key for key in obj.keys() if key.startswith('Item')]
+                item_id = loot_bucket_obj.get(key)
+                if item_id:
+                    item_tags = loot_bucket_obj.get(f'Tags{item_num}')
+                    item_qty = loot_bucket_obj.get(f'Quantity{item_num}')
+                    item_match = loot_bucket_obj.get(f'MatchOne{item_num}')
+                    loot_bucket_name = loot_bucket_names[f'{item_num}']
+                    if loot_bucket_name not in loot_buckets:
+                        loot_buckets[loot_bucket_name] = {}
+                    if item_id not in loot_buckets[loot_bucket_name]:
+                        loot_buckets[loot_bucket_name][item_id] = {}
+                    loot_buckets[loot_bucket_name][item_id]['tags'] = item_tags
+                    loot_buckets[loot_bucket_name][item_id]['qty'] = item_qty
+                    loot_buckets[loot_bucket_name][item_id]['match'] = item_match
 
-            # Loop through each Item key and add it to the YAML data dictionary
-            for item_key in item_keys:
+    process_fixed_width_item_keys(loot_buckets, yaml_data)
 
-                item_num = item_key.replace('Item', '')
-                if obj[item_key] and obj[item_key].strip():
-                    yaml_data[table_name][item_key] = {'Name': obj[item_key]}
-            continue
-
-        if yaml_data.get(table_name) is None:
-            print(f"{key_type} entry exists without a base table for {table_name}")
-            continue
-
-        item_keys = [key for key in obj.keys() if key.startswith('Item')]
-
-        # Call the function to process item keys
-        process_item_keys(obj, table_name, item_keys, yaml_data, key_type)
-
-    output_filename = filename.replace('.json', '.yml')
-
-    # Write the YAML string to the output file
-    with open(output_filename, 'w') as output_file:
-        yaml.dump(yaml_data, output_file)
-
-    # Convert the YAML data to a string
-    process_fixed_width_item_keys(yaml_data)
-
-    # Replace the input file extension with '.yml'
-    output_filename = filename.replace('.json', '_fixedwidth.yml')
-
-    # Write the YAML string to the output file
-    with open(output_filename, 'w') as output_file:
-        yaml.dump(yaml_data, output_file)
-
-    print(f"Fixed width YAML table has been written to {output_filename}")
+    # Write the YAML data to file
+    yaml = YAML()
+    with open('output.yml', 'w') as f:
+        yaml.dump(yaml_data, f)
 
 if __name__ == '__main__':
     main()
