@@ -37,7 +37,7 @@ def main():
 
     # Load the JSON data from the specified file
     filename = sys.argv[1]
-    with open(filename, 'r') as f:
+    with open(filename, 'r', encoding="utf8") as f:
         loot_buckets_data = json.load(f)
 
     # Create a dictionary for the output YAML data
@@ -71,7 +71,7 @@ def main():
 
     # Write the YAML data to file
     yaml = YAML()
-    with open('output.yml', 'w') as f:
+    with open('output.yml', 'w', encoding="utf8") as f:
         yaml.dump(yaml_data, f)
 
 if __name__ == '__main__':

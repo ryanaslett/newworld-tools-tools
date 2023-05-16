@@ -54,7 +54,7 @@ def main():
 
     # Load the JSON data from the specified file
     filename = sys.argv[1]
-    with open(filename, 'r') as f:
+    with open(filename, 'r', encoding="utf8") as f:
         data = json.load(f)  # Load JSON directly from the file
     # Create a dictionary for the output YAML data
     yaml_data = {}
@@ -105,7 +105,7 @@ def main():
     output_filename = filename.replace('.json', '.yml')
 
     # Write the YAML string to the output file
-    with open(output_filename, 'w') as output_file:
+    with open(output_filename, 'w', encoding="utf8") as output_file:
         yaml.dump(yaml_data, output_file)
 
     # Convert the YAML data to a string
@@ -115,7 +115,7 @@ def main():
     output_filename = filename.replace('.json', '_fixedwidth.yml')
 
     # Write the YAML string to the output file
-    with open(output_filename, 'w') as output_file:
+    with open(output_filename, 'w', encoding="utf8") as output_file:
         yaml.dump(yaml_data, output_file)
 
     print(f"Fixed width YAML table has been written to {output_filename}")

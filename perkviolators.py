@@ -18,14 +18,14 @@ def main():
     lootbuckets_filename = os.path.join(directory, "LootBucketData", "LootBuckets.json")
 
     # Read perks from file
-    with open(perk_filename, "r") as perks_file:
+    with open(perk_filename, "r", encoding="utf8") as perks_file:
         perks_list = json.load(perks_file)
         # Convert the list of perks to a dictionary for easier access
         perks = {perk["PerkID"]: perk["ExclusiveLabels"] for perk in perks_list if
                  "_Gem_" not in perk["PerkID"] and "_Stat_" not in perk["PerkID"]}
 
     # Read lootbuckets_data from file
-    with open(lootbuckets_filename, "r") as lootbuckets_file:
+    with open(lootbuckets_filename, "r", encoding="utf8") as lootbuckets_file:
         loot_buckets_data = json.load(lootbuckets_file)
 
     loot_buckets = {}
@@ -58,7 +58,7 @@ def main():
         item_filename = os.path.join(item_directory, filename)
 
         # Read items from file
-        with open(item_filename, "r") as items_file:
+        with open(item_filename, "r", encoding="utf8") as items_file:
             items = json.load(items_file)
 
         for item in items:
@@ -99,7 +99,7 @@ def main():
                 print(f"https://nwdb.info/db/item/{item['ItemID']} , Lootbucket Info; {loot_bucket_string}, From: {filename}")
 
     # Write the result to a file
-    with open("output.json", "w") as output_file:
+    with open("output.json", "w", encoding="utf8") as output_file:
         json.dump(output_data, output_file, indent=2)
 
 
