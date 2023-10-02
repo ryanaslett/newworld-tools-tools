@@ -5,7 +5,7 @@ from ruamel.yaml import YAML
 
 def process_fixed_width_item_keys(loot_buckets, yaml_data):
     # Define the fixed width column widths
-    item_width: int = 10
+    item_width: int = 4
     tags_width: int = 20
     qty_width: int = 10
     match_width: int = 10
@@ -18,10 +18,11 @@ def process_fixed_width_item_keys(loot_buckets, yaml_data):
         item_keys = [key for key in loot_bucket_contents.keys()]
         for item_key in item_keys:
 
+            item_id = loot_bucket_contents[item_key]['item_id']
             item_tags = loot_bucket_contents[item_key]['tags']
             item_qty = loot_bucket_contents[item_key]['qty']
             item_match = loot_bucket_contents[item_key]['match']
-            item_string = f'{item_key.ljust(name_width)} {str(item_qty).rjust(qty_width)} {str(item_match).ljust(match_width)} {item_tags.ljust(tags_width)} \n'
+            item_string = f'{str(item_key).ljust(item_width)} {item_id.ljust(name_width)} {str(item_qty).rjust(qty_width)} {str(item_match).ljust(match_width)} {item_tags.ljust(tags_width)} \n'
             items_string += item_string
 
     # Construct the multi-line string for the Item fields
@@ -46,7 +47,9 @@ def main():
     # Loop through each JSON object and populate the YAML data dictionary
     loot_buckets = {}
     loot_bucket_names = {}
+    row_num = 0
     for loot_bucket_obj in loot_buckets_data:
+        row_num += 1
         for key in loot_bucket_obj.keys():
             if key.startswith("Item") and key[4:].isdigit():
                 item_num = int(key[4:])
@@ -61,11 +64,12 @@ def main():
                     loot_bucket_name = loot_bucket_names[f'{item_num}']
                     if loot_bucket_name not in loot_buckets:
                         loot_buckets[loot_bucket_name] = {}
-                    if item_id not in loot_buckets[loot_bucket_name]:
-                        loot_buckets[loot_bucket_name][item_id] = {}
-                    loot_buckets[loot_bucket_name][item_id]['tags'] = item_tags
-                    loot_buckets[loot_bucket_name][item_id]['qty'] = item_qty
-                    loot_buckets[loot_bucket_name][item_id]['match'] = item_match
+                    if row_num not in loot_buckets[loot_bucket_name]:
+                        loot_buckets[loot_bucket_name][row_num] = {}
+                    loot_buckets[loot_bucket_name][row_num]['item_id'] = item_id
+                    loot_buckets[loot_bucket_name][row_num]['tags'] = item_tags
+                    loot_buckets[loot_bucket_name][row_num]['qty'] = item_qty
+                    loot_buckets[loot_bucket_name][row_num]['match'] = item_match
 
     process_fixed_width_item_keys(loot_buckets, yaml_data)
 
