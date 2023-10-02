@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-import pydevd_pycharm
+#import pydevd_pycharm
 import json
 import os
 import re
@@ -21,21 +21,23 @@ def main():
         print("Usage: nwodiff.py <file1> <file2>")
         sys.exit(1)
     console = Console(force_terminal=True, highlight=False)
+    console2 = Console(force_terminal=True, highlight=False)
     file1_path = sys.argv[1]
     file2_path = sys.argv[2]
     skip_config = os.environ.get('SKIP_FIELDS', '')
     display_new = os.environ.get('SHOW_NEW', '')
     skipped_field_list = skip_config.split(',') if skip_config else []
+    full_output = []
 
     if file1_path == 'nul':
-        print(f"New File: {file2_path}")
+        full_output.append(f"New File: {file2_path}")
     if file2_path == 'nul':
-        print(f"Deleted File: {file1_path}")
+        full_output.append(f"Deleted File: {file1_path}")
     if not file1_path.endswith('.json') or not file2_path.endswith('.json'):
         # print("Both files should be .json files")
         sys.exit(1)
 
-    print(f"\n\n[blue bold]{file2_path}")
+    full_output.append(f"\n\n[blue bold]{file2_path}")
 
     with open(file1_path, 'r', encoding="utf8") as file1, open(file2_path, 'r', encoding="utf8") as file2:
         old_data = json.loads(file1.read())
@@ -47,11 +49,11 @@ def main():
 
         # Check if there is more than one object key for some fucking reason
         if len(object_key_new) > 1:
-            print(f"- Fuckin A More than one object key")
+            full_output.append(f"- Fuckin A More than one object key")
 
         # Check if the object keys changed:
         if object_key_new[0] != object_key_old[0]:
-            print(f"- Fuckin A the object keys changed")
+            full_output.append(f"- Fuckin A the object keys changed")
 
         keys_list1 = set(key for d in old_data for key in d.keys())
         keys_list2 = set(key for d in new_data for key in d.keys())
@@ -63,7 +65,7 @@ def main():
         # if added_keys:
         #     print("Added keys:", added_keys)
         if removed_keys:
-            print(f"[red]Removed keys:{removed_keys}[/red]")
+            full_output.append(f"[red]Removed keys:{removed_keys}[/red]")
 
         old_data_dict = {f"{list(item.keys())[0]}_{item[list(item.keys())[0]]}": item for item in old_data}
         new_data_dict = {f"{list(item.keys())[0]}_{item[list(item.keys())[0]]}": item for item in new_data}
@@ -109,21 +111,29 @@ def main():
                             if field not in skipped_field_list:
                                 changes.append(f"\t{field} [red strike italic]{old_object[field]}[/]:right_arrow: [bold green]{new_object[field]}[/]")
                 if changes:
-                    console.print()
+
                     changes.sort()
-                    changes.insert(0, f"[dim cyan]{k}:")
+                    changes.insert(0, f"\n[dim cyan]{k}:")
                     for change in changes:
-                        console.print(change)
+                        full_output.append(change)
         #adds.sort()
         for new_objects in adds:
-            console.print(new_objects)
+            full_output.append(new_objects)
 
 
 
 
 
         for difference in differences:
-            print(difference)
+            full_output.append(difference)
 
+        foo = dict(os.environ)
+        for line in full_output:
+            #with console.pager():
+            console.print(line)
+
+        # captured_output = output.getvalue()
+        # console2.print(captured_output)
+       # pydoc.pager(captured_output)
 if __name__ == "__main__":
     main()
