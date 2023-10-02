@@ -74,8 +74,8 @@ def main():
             # We have a new loot Table.
             yaml_data[table_name] = {}
             # Define a list of field names to assign to the YAML data
-            loot_table_metadata = ['RollBonusSetting', 'AND/OR', 'Conditions', 'ConditionOverridesRoll', 'TriggerLimitOnVisit', 'UseLevelGS', 'HWMMult',
-                           'ChanceToExceedIndex', 'GSBonus']
+            loot_table_metadata = ['RollBonusSetting', 'AND/OR', 'Conditions', 'ConditionOverridesRoll', 'TriggerLimitOnVisit', 'UseLevelGS',
+                           'ChanceToExceedIndex', 'GSBonus', 'LootBiasingEnabled', 'LootBiasingChanceOverride']
 
             # Loop over the field names and optionally set the value in the YAML data
             for field_name in loot_table_metadata:
