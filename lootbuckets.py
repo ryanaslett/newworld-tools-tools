@@ -6,9 +6,11 @@ from ruamel.yaml import YAML
 def process_fixed_width_item_keys(loot_buckets, yaml_data):
     # Define the fixed width column widths
     item_width: int = 4
-    tags_width: int = 20
+    tags_width: int = 25
     qty_width: int = 10
     match_width: int = 10
+    lootbias_width: int = 5
+    odds_width: int = 4
     name_width: int = 72  # because `Schematic_House_HousingItem_Table_Settler_Decor_Garden_PicnicTable01`
 
     # Loop through each Item key and add it to the YAML data dictionary
@@ -22,11 +24,13 @@ def process_fixed_width_item_keys(loot_buckets, yaml_data):
             item_tags = loot_bucket_contents[item_key]['tags']
             item_qty = loot_bucket_contents[item_key]['qty']
             item_match = loot_bucket_contents[item_key]['match']
-            item_string = f'{str(item_key).ljust(item_width)} {item_id.ljust(name_width)} {str(item_qty).rjust(qty_width)} {str(item_match).ljust(match_width)} {item_tags.ljust(tags_width)} \n'
+            item_lootbias_disabled = loot_bucket_contents[item_key]['lootbiasdisabled']
+            item_odds = loot_bucket_contents[item_key]['odds']
+            item_string = f'{str(item_key).ljust(item_width)} {item_id.ljust(name_width)} {str(item_qty).rjust(qty_width)} {str(item_match).ljust(match_width)} {str(item_lootbias_disabled).ljust(lootbias_width)} {str(item_odds).rjust(odds_width)} {item_tags.ljust(tags_width)}  \n'
             items_string += item_string
 
     # Construct the multi-line string for the Item fields
-        items_output = f"ItemId{' ' * (name_width - 6)} {' ' * (qty_width - 3)}Qty MatchOne{' ' * (match_width - 8)} Tags\n{'_' * (name_width + tags_width + qty_width + match_width)}\n{items_string}"
+        items_output = f"Idx  ItemId{' ' * (name_width - 6)} {' ' * (qty_width - 3)}Qty MatchOne{' ' * (match_width - 8)} LBDis Odds Tags\n{'_' * (10 + name_width + tags_width + qty_width + match_width + lootbias_width + odds_width)}\n{items_string}"
         yaml_data[loot_bucket_name] = {}
         yaml_data[loot_bucket_name]['Contents'] = PreservedScalarString(items_output)
 
@@ -60,6 +64,8 @@ def main():
                 if item_id:
                     item_tags = loot_bucket_obj.get(f'Tags{item_num}')
                     item_qty = loot_bucket_obj.get(f'Quantity{item_num}')
+                    loot_biasing_disabled = loot_bucket_obj.get(f'LootBiasingDisabled{item_num}')
+                    odds = loot_bucket_obj.get(f'Odds{item_num}')
                     item_match = loot_bucket_obj.get(f'MatchOne{item_num}')
                     loot_bucket_name = loot_bucket_names[f'{item_num}']
                     if loot_bucket_name not in loot_buckets:
@@ -70,6 +76,8 @@ def main():
                     loot_buckets[loot_bucket_name][row_num]['tags'] = item_tags
                     loot_buckets[loot_bucket_name][row_num]['qty'] = item_qty
                     loot_buckets[loot_bucket_name][row_num]['match'] = item_match
+                    loot_buckets[loot_bucket_name][row_num]['lootbiasdisabled'] = loot_biasing_disabled
+                    loot_buckets[loot_bucket_name][row_num]['odds'] = odds
 
     process_fixed_width_item_keys(loot_buckets, yaml_data)
 
