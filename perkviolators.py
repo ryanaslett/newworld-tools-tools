@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import glob
 from collections import defaultdict
 
 
@@ -11,7 +12,6 @@ def main():
         sys.exit()
 
     directory = sys.argv[1]
-    #item_filename = os.path.join(directory, "MasterItemDefinitions", "MasterItemDefinitions_Named.json")
     item_directory = os.path.join(directory, "MasterItemDefinitions")
 
     perk_filename = os.path.join(directory, "PerkData", "ItemPerks.json")
@@ -46,16 +46,14 @@ def main():
                     loot_buckets[item_id][loot_bucket_name] = item_tag
 
 
-    # Process the data
+    # Process the Master Item Definitions.
     output_data = []
     skip_files = ["MasterItemDefinitions_Named_Depricated.json", "MasterItemDefinitions/MasterItemDefinitions_Playtest.json"]
-    for filename in os.listdir(item_directory):
 
-        if not filename.endswith(".json"):
-            continue
-        if filename in skip_files:
-            continue
-        item_filename = os.path.join(item_directory, filename)
+    json_files = glob.glob(os.path.join(item_directory, "*.json"))
+    master_item_definition_files = [file for file in json_files if os.path.basename(file) not in skip_files]
+
+    for item_filename in master_item_definition_files:
 
         # Read items from file
         with open(item_filename, "r", encoding="utf8") as items_file:
@@ -96,7 +94,7 @@ def main():
                     loot_bucket_string = ""
 
                 output_data.append({"ItemID": item["ItemID"], "Perks": perk_data})
-                print(f"https://nwdb.info/db/item/{item['ItemID']} , Lootbucket Info; {loot_bucket_string}, From: {filename}")
+                print(f"https://nwdb.info/db/item/{item['ItemID']} , Lootbucket Info; {loot_bucket_string}, From: {item_filename}")
 
     # Write the result to a file
     with open("output.json", "w", encoding="utf8") as output_file:
